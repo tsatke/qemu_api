@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
 
-pub mod args; // not public, because flags require no customization from the caller
+pub mod args;
 
 pub trait QemuSystem {
     fn command() -> &'static str;
