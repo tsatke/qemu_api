@@ -1,4 +1,5 @@
 use crate::args::QemuArgument;
+use crate::chardev::QemuCharDevice;
 use std::path::PathBuf;
 
 #[derive(Default, Debug, Eq, PartialEq, Hash)]
@@ -37,8 +38,45 @@ impl QemuArgument for Bios {
     }
 }
 
+#[derive(Default, Debug, Eq, PartialEq, Hash)]
+pub struct Fullscreen;
+
+impl QemuArgument for Fullscreen {
+    fn format(&self) -> Vec<String> {
+        vec!["-fullscreen".to_string()]
+    }
+}
+
+#[derive(Default, Debug, Eq, PartialEq, Hash)]
+pub struct FreezeOnStartup;
+
+impl QemuArgument for FreezeOnStartup {
+    fn format(&self) -> Vec<String> {
+        vec!["-S".to_string()]
+    }
+}
+
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
+pub struct Gdb(pub String);
+
+impl QemuArgument for Gdb {
+    fn format(&self) -> Vec<String> {
+        vec!["-gdb".to_string(), self.0.clone()]
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct Serial(pub QemuCharDevice);
+
+impl QemuArgument for Serial {
+    fn format(&self) -> Vec<String> {
+        vec!["-serial".to_string(), self.0.format()]
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::chardev::QemuCharDevice;
     use crate::Generic;
     use crate::Qemu;
 
@@ -74,5 +112,41 @@ mod tests {
 
         let args = qemu.args();
         assert_eq!(&["--version"], args.as_slice());
+    }
+
+    #[test]
+    fn test_fullscreen() {
+        let mut qemu = Qemu::<Generic>::new();
+        qemu.fullscreen();
+
+        let args = qemu.args();
+        assert_eq!(&["-fullscreen"], args.as_slice());
+    }
+
+    #[test]
+    fn test_freeze_on_startup() {
+        let mut qemu = Qemu::<Generic>::new();
+        qemu.freeze_on_startup();
+
+        let args = qemu.args();
+        assert_eq!(&["-S"], args.as_slice());
+    }
+
+    #[test]
+    fn test_gdb() {
+        let mut qemu = Qemu::<Generic>::new();
+        qemu.gdb(&"tcp:1235");
+
+        let args = qemu.args();
+        assert_eq!(&["-gdb", "tcp:1235"], args.as_slice());
+    }
+
+    #[test]
+    fn test_serial() {
+        let mut qemu = Qemu::<Generic>::new();
+        qemu.serial(QemuCharDevice::Stdio);
+
+        let args = qemu.args();
+        assert_eq!(&["-serial", "stdio"], args.as_slice());
     }
 }

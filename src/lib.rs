@@ -1,10 +1,15 @@
-use crate::args::{Accel, Bios, Drive, Help, NoReboot, Version};
+use crate::args::{
+    Accel, Bios, Drive, FreezeOnStartup, Fullscreen, Gdb, Help, LogItem, LogItems, NoReboot,
+    Serial, Version,
+};
+use crate::chardev::QemuCharDevice;
 use args::QemuArgument;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
 
 pub mod args;
+pub mod chardev;
 
 pub trait QemuSystem {
     fn command() -> &'static str;
@@ -55,9 +60,14 @@ pub struct Qemu<S> {
     no_reboot: Option<NoReboot>,
     help: Option<Help>,
     version: Option<Version>,
+    fullscreen: Option<Fullscreen>,
     accel: Option<Accel>,
     drives: Vec<Drive>,
     bios: Option<Bios>,
+    serial: Option<Serial>,
+    log_items: Option<LogItems>,
+    freeze_on_startup: Option<FreezeOnStartup>,
+    gdb: Option<Gdb>,
     _system: PhantomData<S>,
 }
 
@@ -85,9 +95,14 @@ where
         push_if_exists(&mut args, self.no_reboot);
         push_if_exists(&mut args, self.help);
         push_if_exists(&mut args, self.version);
+        push_if_exists(&mut args, self.fullscreen);
         push_if_exists(&mut args, self.accel);
         push_many_if_exists(&mut args, self.drives);
         push_if_exists(&mut args, self.bios);
+        push_if_exists(&mut args, self.serial);
+        push_if_exists(&mut args, self.log_items);
+        push_if_exists(&mut args, self.freeze_on_startup);
+        push_if_exists(&mut args, self.gdb);
 
         args
     }
@@ -107,6 +122,11 @@ where
         self
     }
 
+    pub fn fullscreen(&mut self) -> &mut Self {
+        self.fullscreen = Some(Fullscreen);
+        self
+    }
+
     pub fn accel(&mut self, accel: Accel) -> &mut Self {
         self.accel = Some(accel);
         self
@@ -119,6 +139,47 @@ where
 
     pub fn bios(&mut self, bios: PathBuf) -> &mut Self {
         self.bios = Some(Bios(bios));
+        self
+    }
+
+    pub fn serial(&mut self, serial_device: QemuCharDevice) -> &mut Self {
+        self.serial = Some(Serial(serial_device));
+        self
+    }
+
+    pub fn d<I>(&mut self, log_items: I) -> &mut Self
+    where
+        I: IntoIterator<Item = LogItem>,
+    {
+        self.log_items(log_items)
+    }
+
+    pub fn log_items<I>(&mut self, log_items: I) -> &mut Self
+    where
+        I: IntoIterator<Item = LogItem>,
+    {
+        let items = LogItems::from(log_items);
+        self.log_items = Some(items);
+        self
+    }
+
+    #[allow(non_snake_case)] // the qemu argument is called "-S", and "-s" is another argument
+    pub fn S(&mut self) -> &mut Self {
+        self.freeze_on_startup()
+    }
+
+    pub fn freeze_on_startup(&mut self) -> &mut Self {
+        self.freeze_on_startup = Some(FreezeOnStartup);
+        self
+    }
+
+    pub fn s(&mut self) -> &mut Self {
+        self.gdb(&"tcp::1234")
+    }
+
+    pub fn gdb(&mut self, dev: &dyn AsRef<str>) -> &mut Self {
+        let dev = dev.as_ref().to_string();
+        self.gdb = Some(Gdb(dev));
         self
     }
 }

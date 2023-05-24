@@ -1,4 +1,4 @@
-use qemu_api::args::{Accel, Accelerator, Cache, Drive, Format};
+use qemu_api::args::{Accel, Accelerator, Cache, Drive, Format, LogItem};
 use qemu_api::{Qemu, X86_64};
 use std::path::PathBuf;
 use std::process::Command;
@@ -21,6 +21,8 @@ fn main() {
         cache: Some(Cache::Directsync),
         ..Default::default()
     });
+
+    qemu.log_items([LogItem::GuestErrors, LogItem::Cpu]);
 
     let cmd = Command::from(qemu);
     println!("cmd: {:?}", cmd);
