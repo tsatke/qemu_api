@@ -7,7 +7,7 @@ pub struct NoReboot;
 
 impl QemuArgument for NoReboot {
     fn format(&self) -> Vec<String> {
-        vec!["--no-reboot".to_string()]
+        vec!["-no-reboot".to_string()]
     }
 }
 
@@ -16,7 +16,7 @@ pub struct Help;
 
 impl QemuArgument for Help {
     fn format(&self) -> Vec<String> {
-        vec!["--help".to_string()]
+        vec!["-help".to_string()]
     }
 }
 
@@ -25,7 +25,7 @@ pub struct Version;
 
 impl QemuArgument for Version {
     fn format(&self) -> Vec<String> {
-        vec!["--version".to_string()]
+        vec!["-version".to_string()]
     }
 }
 
