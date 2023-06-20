@@ -28,6 +28,7 @@ impl QemuSystem for Generic {
 
 #[derive(Default, Debug, Eq, PartialEq, Hash)]
 pub struct X86_64;
+
 impl QemuSystem for X86_64 {
     fn command() -> &'static str {
         "qemu-system-x86_64"
@@ -36,6 +37,7 @@ impl QemuSystem for X86_64 {
 
 #[derive(Default, Debug, Eq, PartialEq, Hash)]
 pub struct Aarch64;
+
 impl QemuSystem for Aarch64 {
     fn command() -> &'static str {
         "qemu-system-aarch64"
@@ -68,6 +70,7 @@ pub struct Qemu<S> {
     log_items: Option<LogItems>,
     freeze_on_startup: Option<FreezeOnStartup>,
     gdb: Option<Gdb>,
+    others: Vec<String>,
     _system: PhantomData<S>,
 }
 
@@ -103,6 +106,8 @@ where
         push_if_exists(&mut args, self.log_items);
         push_if_exists(&mut args, self.freeze_on_startup);
         push_if_exists(&mut args, self.gdb);
+
+        args.extend(self.others);
 
         args
     }
@@ -230,6 +235,11 @@ where
     pub fn gdb(&mut self, dev: &dyn AsRef<str>) -> &mut Self {
         let dev = dev.as_ref().to_string();
         self.gdb = Some(Gdb(dev));
+        self
+    }
+
+    pub fn other(&mut self, v: impl ToString) -> &mut Self {
+        self.others.push(v.to_string());
         self
     }
 }
